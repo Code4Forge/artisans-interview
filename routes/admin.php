@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\TeacherController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'throttle:100,1'])
+Route::middleware(['auth', 'throttle:10,1'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
