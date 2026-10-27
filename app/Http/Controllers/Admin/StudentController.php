@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Contracts\Repositories\StudentRepositoryInterface;
-use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Students\StoreStudentRequest;
 use App\Http\Requests\Admin\Students\UpdateStudentRequest;
@@ -19,7 +18,6 @@ class StudentController extends Controller
 {
     public function __construct(
         private StudentRepositoryInterface $students,
-        private UserRepositoryInterface $users,
         private StudentService $studentService,
     ) {}
 
