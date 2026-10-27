@@ -6,6 +6,7 @@
     <title>@yield('title', 'Home') — {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans">
     <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
