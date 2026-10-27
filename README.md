@@ -21,7 +21,7 @@ The database comes pre-seeded with static demo accounts for each role (password 
 
 ### 1. Admin Authentication & Security
 - Secure sign-in at `/login` with session regeneration and branded login layout.
-- Rate limiting protection: Global rate limiting middleware restricts all routes to **10 requests per minute** (`throttle:10,1`) with HTTP `429 Too Many Requests`. Additionally, 5 consecutive failed login attempts locks IP/account.
+- Rate limiting protection: Public and profile routes in `routes/web.php` use `throttle:10,1`. Admin **store** and **update** actions (create/save writes) are limited to **10 requests per minute** (`throttle:10,1`) with HTTP `429 Too Many Requests`. Listing, show, edit forms, and deletes are not throttled. Additionally, 5 consecutive failed login attempts locks IP/account.
 - Permission-based route gating under `routes/admin.php` via Spatie Laravel Permission middleware.
 
 ### 2. Teacher Management (CRUD by Admin)
@@ -101,7 +101,7 @@ The database comes pre-seeded with static demo accounts for each role (password 
 
 ## Application Routes & Rate Limiting
 
-All application routes are protected by a global **10 requests per minute** rate-limiting middleware (`throttle:10,1`). If the request limit is reached within a 60-second window, the application terminates the request with an HTTP `429 Too Many Requests` status code and standard rate limit headers (`Retry-After`, `X-RateLimit-Limit: 10`, `X-RateLimit-Remaining: 0`).
+Public, login, and profile routes in `routes/web.php` use `throttle:10,1` on every request. In `routes/admin.php`, rate limiting applies only to **store** and **update** operations (including role permission updates). If that write limit is reached within a 60-second window, the application terminates the request with an HTTP `429 Too Many Requests` status code and standard rate limit headers (`Retry-After`, `X-RateLimit-Limit: 10`, `X-RateLimit-Remaining: 0`). Admin GET, create/edit form, and DELETE routes are not throttled.
 
 ### Complete Route Directory
 
@@ -126,56 +126,56 @@ All application routes are protected by a global **10 requests per minute** rate
 
 | Method | URI / Path | Route Name | Middleware | Description / Access Scope |
 | --- | --- | --- | --- | --- |
-| `GET\|HEAD` | `/admin/dashboard` | `admin.dashboard.index` | `web`, `throttle:10,1`, `auth`, `permission:dashboard.view` | Dynamic analytics hub tailored to Admin, Teacher, Student, or Parent roles. |
+| `GET\|HEAD` | `/admin/dashboard` | `admin.dashboard.index` | `web`, `auth`, `permission:dashboard.view` | Dynamic analytics hub tailored to Admin, Teacher, Student, or Parent roles. |
 
 #### 4. Teacher Management (`routes/admin.php`)
 
 | Method | URI / Path | Route Name | Middleware | Description / Access Scope |
 | --- | --- | --- | --- | --- |
-| `GET\|HEAD` | `/admin/teachers` | `admin.teachers.index` | `web`, `throttle:10,1`, `auth`, `permission:teachers.view` | Server-side DataTables list of teachers with instant search and pagination. |
-| `GET\|HEAD` | `/admin/teachers/create` | `admin.teachers.create` | `web`, `throttle:10,1`, `auth`, `permission:teachers.create` | Teacher creation form (name, email, phone, avatar, password). |
+| `GET\|HEAD` | `/admin/teachers` | `admin.teachers.index` | `web`, `auth`, `permission:teachers.view` | Server-side DataTables list of teachers with instant search and pagination. |
+| `GET\|HEAD` | `/admin/teachers/create` | `admin.teachers.create` | `web`, `auth`, `permission:teachers.create` | Teacher creation form (name, email, phone, avatar, password). |
 | `POST` | `/admin/teachers` | `admin.teachers.store` | `web`, `throttle:10,1`, `auth`, `permission:teachers.create` | Validates and creates a new teacher, uploads avatar. |
-| `GET\|HEAD` | `/admin/teachers/{teacher}` | `admin.teachers.show` | `web`, `throttle:10,1`, `auth`, `permission:teachers.view` | View teacher profile card and assigned students summary. |
-| `GET\|HEAD` | `/admin/teachers/{teacher}/edit` | `admin.teachers.edit` | `web`, `throttle:10,1`, `auth`, `permission:teachers.update` | Edit teacher information and optional avatar replacement. |
+| `GET\|HEAD` | `/admin/teachers/{teacher}` | `admin.teachers.show` | `web`, `auth`, `permission:teachers.view` | View teacher profile card and assigned students summary. |
+| `GET\|HEAD` | `/admin/teachers/{teacher}/edit` | `admin.teachers.edit` | `web`, `auth`, `permission:teachers.update` | Edit teacher information and optional avatar replacement. |
 | `PUT\|PATCH` | `/admin/teachers/{teacher}` | `admin.teachers.update` | `web`, `throttle:10,1`, `auth`, `permission:teachers.update` | Saves changes to an existing teacher record. |
-| `DELETE` | `/admin/teachers/{teacher}` | `admin.teachers.destroy` | `web`, `throttle:10,1`, `auth`, `permission:teachers.delete` | Deletes a teacher record (blocked if enrolled students are assigned). |
+| `DELETE` | `/admin/teachers/{teacher}` | `admin.teachers.destroy` | `web`, `auth`, `permission:teachers.delete` | Deletes a teacher record (blocked if enrolled students are assigned). |
 
 #### 5. Student & Parent Management (`routes/admin.php`)
 
 | Method | URI / Path | Route Name | Middleware | Description / Access Scope |
 | --- | --- | --- | --- | --- |
-| `GET\|HEAD` | `/admin/students` | `admin.students.index` | `web`, `throttle:10,1`, `auth`, `permission:students.view` | Server-side DataTables list of students for authorized users. |
-| `GET\|HEAD` | `/admin/students/create` | `admin.students.create` | `web`, `throttle:10,1`, `auth`, `permission:students.create` | Form to create a student with dynamic multi-parent/guardian links. |
+| `GET\|HEAD` | `/admin/students` | `admin.students.index` | `web`, `auth`, `permission:students.view` | Server-side DataTables list of students for authorized users. |
+| `GET\|HEAD` | `/admin/students/create` | `admin.students.create` | `web`, `auth`, `permission:students.create` | Form to create a student with dynamic multi-parent/guardian links. |
 | `POST` | `/admin/students` | `admin.students.store` | `web`, `throttle:10,1`, `auth`, `permission:students.create` | Validates student data, creates student, auto-allots role permissions, and links parents. |
-| `GET\|HEAD` | `/admin/students/{student}` | `admin.students.show` | `web`, `throttle:10,1`, `auth`, `permission:students.view` | Detailed student view with linked parents. |
-| `GET\|HEAD` | `/admin/students/{student}/edit` | `admin.students.edit` | `web`, `throttle:10,1`, `auth`, `permission:students.update` | Edit student form with parent relationships editor. |
+| `GET\|HEAD` | `/admin/students/{student}` | `admin.students.show` | `web`, `auth`, `permission:students.view` | Detailed student view with linked parents. |
+| `GET\|HEAD` | `/admin/students/{student}/edit` | `admin.students.edit` | `web`, `auth`, `permission:students.update` | Edit student form with parent relationships editor. |
 | `PUT\|PATCH` | `/admin/students/{student}` | `admin.students.update` | `web`, `throttle:10,1`, `auth`, `permission:students.update` | Updates student details and synchronizes parent linkages. |
-| `DELETE` | `/admin/students/{student}` | `admin.students.destroy` | `web`, `throttle:10,1`, `auth`, `permission:students.delete` | Deletes student and cleans up parent pivot associations. |
+| `DELETE` | `/admin/students/{student}` | `admin.students.destroy` | `web`, `auth`, `permission:students.delete` | Deletes student and cleans up parent pivot associations. |
 
 #### 6. Announcements & Notifications (`routes/admin.php`)
 
 | Method | URI / Path | Route Name | Middleware | Description / Access Scope |
 | --- | --- | --- | --- | --- |
-| `GET\|HEAD` | `/admin/announcements` | `admin.announcements.index` | `web`, `throttle:10,1`, `auth`, `permission:announcements.view` | Announcements listing / feed filtered according to role permissions. |
-| `GET\|HEAD` | `/admin/announcements/create` | `admin.announcements.create` | `web`, `throttle:10,1`, `auth`, `permission:announcements.create` | Announcement composer with audience picker and attachment uploader. |
+| `GET\|HEAD` | `/admin/announcements` | `admin.announcements.index` | `web`, `auth`, `permission:announcements.view` | Announcements listing / feed filtered according to role permissions. |
+| `GET\|HEAD` | `/admin/announcements/create` | `admin.announcements.create` | `web`, `auth`, `permission:announcements.create` | Announcement composer with audience picker and attachment uploader. |
 | `POST` | `/admin/announcements` | `admin.announcements.store` | `web`, `throttle:10,1`, `auth`, `permission:announcements.create` | Publishes announcement and dispatches queued emails (2s staggering; bulletin-only for teachers). |
-| `GET\|HEAD` | `/admin/announcements/recipients-search` | `admin.announcements.recipients.search` | `web`, `throttle:10,1`, `auth`, `permission:announcements.view` | AJAX search endpoint for debounced recipient selection in custom audience mode. |
-| `GET\|HEAD` | `/admin/announcements/{announcement}` | `admin.announcements.show` | `web`, `throttle:10,1`, `auth`, `permission:announcements.view` | Read-only announcement view with inline attachment preview (images, PDFs, documents). |
-| `GET\|HEAD` | `/admin/announcements/{announcement}/download` | `admin.announcements.download` | `web`, `throttle:10,1`, `auth`, `permission:announcements.view` | Secure stream download for announcement attachments. |
-| `DELETE` | `/admin/announcements/{announcement}` | `admin.announcements.destroy` | `web`, `throttle:10,1`, `auth`, `permission:announcements.delete` | Deletes announcement, purges attachment files, and cancels pending queue jobs. |
+| `GET\|HEAD` | `/admin/announcements/recipients-search` | `admin.announcements.recipients.search` | `web`, `auth`, `permission:announcements.view` | AJAX search endpoint for debounced recipient selection in custom audience mode. |
+| `GET\|HEAD` | `/admin/announcements/{announcement}` | `admin.announcements.show` | `web`, `auth`, `permission:announcements.view` | Read-only announcement view with inline attachment preview (images, PDFs, documents). |
+| `GET\|HEAD` | `/admin/announcements/{announcement}/download` | `admin.announcements.download` | `web`, `auth`, `permission:announcements.view` | Secure stream download for announcement attachments. |
+| `DELETE` | `/admin/announcements/{announcement}` | `admin.announcements.destroy` | `web`, `auth`, `permission:announcements.delete` | Deletes announcement, purges attachment files, and cancels pending queue jobs. |
 
 #### 7. Role & Permission Management (`routes/admin.php`)
 
 | Method | URI / Path | Route Name | Middleware | Description / Access Scope |
 | --- | --- | --- | --- | --- |
-| `GET\|HEAD` | `/admin/roles` | `admin.roles.index` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Matrix of system roles with user and permission totals. |
-| `GET\|HEAD` | `/admin/roles/create` | `admin.roles.create` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | New role creation form. |
+| `GET\|HEAD` | `/admin/roles` | `admin.roles.index` | `web`, `auth`, `permission:roles.manage` | Matrix of system roles with user and permission totals. |
+| `GET\|HEAD` | `/admin/roles/create` | `admin.roles.create` | `web`, `auth`, `permission:roles.manage` | New role creation form. |
 | `POST` | `/admin/roles` | `admin.roles.store` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Stores new custom role. |
-| `GET\|HEAD` | `/admin/roles/{role}` | `admin.roles.show` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Displays role details and assigned users. |
-| `GET\|HEAD` | `/admin/roles/{role}/edit` | `admin.roles.edit` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Role rename form. |
+| `GET\|HEAD` | `/admin/roles/{role}` | `admin.roles.show` | `web`, `auth`, `permission:roles.manage` | Displays role details and assigned users. |
+| `GET\|HEAD` | `/admin/roles/{role}/edit` | `admin.roles.edit` | `web`, `auth`, `permission:roles.manage` | Role rename form. |
 | `PUT\|PATCH` | `/admin/roles/{role}` | `admin.roles.update` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Updates role name. |
-| `DELETE` | `/admin/roles/{role}` | `admin.roles.destroy` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Removes custom role (default core roles protected). |
-| `GET\|HEAD` | `/admin/roles/{role}/permissions` | `admin.roles.permissions` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Visual permission assignment editor for the selected role. |
+| `DELETE` | `/admin/roles/{role}` | `admin.roles.destroy` | `web`, `auth`, `permission:roles.manage` | Removes custom role (default core roles protected). |
+| `GET\|HEAD` | `/admin/roles/{role}/permissions` | `admin.roles.permissions` | `web`, `auth`, `permission:roles.manage` | Visual permission assignment editor for the selected role. |
 | `PUT` | `/admin/roles/{role}/permissions` | `admin.roles.permissions.update` | `web`, `throttle:10,1`, `auth`, `permission:roles.manage` | Persists updated permission checkboxes to the role. |
 
 #### 8. Log Viewer (`opcodesio/log-viewer`)
@@ -203,7 +203,7 @@ php vendor/bin/pest
 ```
 
 - `AuthenticationTest`: Login, logout, failed login throttling, session security.
-- `RateLimitingTest`: Global 10 requests/minute rate-limiting enforcement for guest and authenticated routes.
+- `RateLimitingTest`: `throttle:10,1` on web routes and on admin store/update writes.
 - `TeacherManagementTest`: Teacher CRUD, validation, student assignment constraints.
 - `StudentManagementTest`: Student CRUD, multi-parent relationships, email uniqueness, teacher scoping.
 - `AnnouncementManagementTest`: Audience routing, email queueing, teacher bulletin (no email), custom selection, attachment download, queue cleanup on deletion.

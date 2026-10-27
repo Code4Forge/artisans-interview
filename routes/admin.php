@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\TeacherController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'throttle:10,1'])
+Route::middleware(['auth'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -21,21 +21,26 @@ Route::middleware(['auth', 'throttle:10,1'])
 
         Route::put('roles/{role}/permissions', [RolePermissionController::class, 'updatePermissions'])
             ->name('roles.permissions.update')
-            ->middleware('permission:roles.manage');
+            ->middleware(['permission:roles.manage', 'throttle:10,1']);
 
         Route::resource('roles', RolePermissionController::class)
-            ->middleware('permission:roles.manage');
+            ->middleware('permission:roles.manage')
+            ->middlewareFor(['store', 'update'], 'throttle:10,1');
 
         Route::resource('teachers', TeacherController::class)
             ->middlewareFor(['index', 'show'], 'permission:teachers.view')
-            ->middlewareFor(['create', 'store'], 'permission:teachers.create')
-            ->middlewareFor(['edit', 'update'], 'permission:teachers.update')
+            ->middlewareFor('create', 'permission:teachers.create')
+            ->middlewareFor('store', ['permission:teachers.create', 'throttle:10,1'])
+            ->middlewareFor('edit', 'permission:teachers.update')
+            ->middlewareFor('update', ['permission:teachers.update', 'throttle:10,1'])
             ->middlewareFor('destroy', 'permission:teachers.delete');
 
         Route::resource('students', StudentController::class)
             ->middlewareFor(['index', 'show'], 'permission:students.view')
-            ->middlewareFor(['create', 'store'], 'permission:students.create')
-            ->middlewareFor(['edit', 'update'], 'permission:students.update')
+            ->middlewareFor('create', 'permission:students.create')
+            ->middlewareFor('store', ['permission:students.create', 'throttle:10,1'])
+            ->middlewareFor('edit', 'permission:students.update')
+            ->middlewareFor('update', ['permission:students.update', 'throttle:10,1'])
             ->middlewareFor('destroy', 'permission:students.delete');
 
         Route::get('announcements/recipients-search', [AnnouncementController::class, 'recipientsSearch'])
@@ -49,6 +54,7 @@ Route::middleware(['auth', 'throttle:10,1'])
         Route::resource('announcements', AnnouncementController::class)
             ->except(['edit', 'update'])
             ->middlewareFor(['index', 'show'], 'permission:announcements.view')
-            ->middlewareFor(['create', 'store'], 'permission:announcements.create')
+            ->middlewareFor('create', 'permission:announcements.create')
+            ->middlewareFor('store', ['permission:announcements.create', 'throttle:10,1'])
             ->middlewareFor('destroy', 'permission:announcements.delete');
     });
